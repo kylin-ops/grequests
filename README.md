@@ -1,9 +1,9 @@
 # GRequests
 A Go "clone" of the great and famous Requests library
 
-[![Build Status](https://travis-ci.org/levigross/grequests.svg?branch=master)](https://travis-ci.org/levigross/grequests) [![GoDoc](https://godoc.org/github.com/levigross/grequests?status.svg)](https://godoc.org/github.com/levigross/grequests)
-[![Coverage Status](https://coveralls.io/repos/levigross/grequests/badge.svg)](https://coveralls.io/r/levigross/grequests)
-[![Join the chat at https://gitter.im/levigross/grequests](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/levigross/grequests?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/kylin-ops/grequests.svg?branch=master)](https://travis-ci.org/kylin-ops/grequests) [![GoDoc](https://godoc.org/github.com/kylin-ops/grequests?status.svg)](https://godoc.org/github.com/kylin-ops/grequests)
+[![Coverage Status](https://coveralls.io/repos/kylin-ops/grequests/badge.svg)](https://coveralls.io/r/kylin-ops/grequests)
+[![Join the chat at https://gitter.im/kylin-ops/grequests](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/kylin-ops/grequests?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 License
 ======
@@ -20,11 +20,11 @@ Features
 
 Install
 =======
-`go get -u github.com/levigross/grequests`
+`go get -u github.com/kylin-ops/grequests`
 
 Usage
 ======
-`import "github.com/levigross/grequests"`
+`import "github.com/kylin-ops/grequests"`
 
 Basic Examples
 =========
