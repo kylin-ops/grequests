@@ -1,4 +1,4 @@
-module github.com/kylin-ops/requests
+module github.com/kylin-ops/grequests
 
 require (
 	github.com/google/go-querystring v1.0.0
