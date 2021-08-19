@@ -15,7 +15,6 @@ type Data map[string]interface{}
 type Param map[string]string
 
 type RequestOptions struct {
-	Url     string
 	Header  Header
 	Data    Data
 	Json    bool
@@ -27,53 +26,57 @@ type Response struct {
 	Response *http.Response
 }
 
-func request(method string, req *RequestOptions) (resp *Response, err error) {
+func request(url, method string, options ...*RequestOptions) (resp *Response, err error) {
+	var option = RequestOptions{}
+	if len(options) > 0 {
+		option = *options[0]
+	}
 	var r *http.Request
 	var response Response
 	var params []string
-	client := http.Client{Timeout: req.Timeout}
-	data, _ := json.Marshal(req.Data)
-	for k, v := range req.Params {
+	client := http.Client{Timeout: option.Timeout}
+	data, _ := json.Marshal(option.Data)
+	for k, v := range option.Params {
 		params = append(params, k+"="+v)
 	}
 	if p := strings.Join(params, "&"); p != "" {
-		req.Url = req.Url + "?" + p
+		url = url + "?" + p
 	}
-	r, err = http.NewRequest(method, req.Url, bytes.NewReader(data))
+	r, err = http.NewRequest(method, url, bytes.NewReader(data))
 	if err != nil {
 		return resp, err
 	}
 	r.Header.Set("User-Agent", "go-request"+version)
-	for k, v := range req.Header {
+	for k, v := range option.Header {
 		r.Header.Set(k, v)
 	}
-	if req.Json {
+	if option.Json {
 		r.Header.Set("Content-Type", "application/json")
 	}
 	response.Response, err = client.Do(r)
 	return &response, err
 }
 
-func Get(options *RequestOptions) (resp *Response, err error) {
-	return request("GET", options)
+func Get(url string, options ...*RequestOptions) (resp *Response, err error) {
+	return request(url, "GET", options...)
 }
 
-func Post(options *RequestOptions) (resp *Response, err error) {
-	return request("POST", options)
+func Post(url string, options ...*RequestOptions) (resp *Response, err error) {
+	return request(url, "POST", options...)
 }
 
-func Put(options *RequestOptions) (resp *Response, err error) {
-	return request("PUT", options)
+func Put(url string, options ...*RequestOptions) (resp *Response, err error) {
+	return request(url, "PUT", options...)
 }
 
-func Patch(options *RequestOptions) (resp *Response, err error) {
-	return request("PATCH", options)
+func Patch(url string, options ...*RequestOptions) (resp *Response, err error) {
+	return request(url, "PATCH", options...)
 }
 
-func Delete(options *RequestOptions) (resp *Response, err error) {
-	return request("DELETE", options)
+func Delete(url string, options ...*RequestOptions) (resp *Response, err error) {
+	return request(url, "DELETE", options...)
 }
 
-func Head(options *RequestOptions) (resp *Response, err error) {
-	return request("HEAD", options)
+func Head(url string, options ...*RequestOptions) (resp *Response, err error) {
+	return request(url, "HEAD", options...)
 }
