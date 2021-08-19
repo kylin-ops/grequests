@@ -3,6 +3,8 @@ package grequests
 import (
 	"bytes"
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
@@ -20,10 +22,6 @@ type RequestOptions struct {
 	Json    bool
 	Params  Param
 	Timeout time.Duration
-}
-
-type Response struct {
-	Response *http.Response
 }
 
 func request(url, method string, options ...*RequestOptions) (resp *Response, err error) {
@@ -79,4 +77,48 @@ func Delete(url string, options ...*RequestOptions) (resp *Response, err error) 
 
 func Head(url string, options ...*RequestOptions) (resp *Response, err error) {
 	return request(url, "HEAD", options...)
+}
+
+type Response struct {
+	Response *http.Response
+}
+
+func (r *Response) Text() (string, error) {
+	d, err := ioutil.ReadAll(r.Response.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(d), nil
+}
+
+func (r *Response) Json(data interface{}) error {
+	d, err := ioutil.ReadAll(r.Response.Body)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(d, data)
+}
+
+func (r *Response) Close() error {
+	return r.Response.Body.Close()
+}
+
+func (r *Response) StatusCode() int {
+	return r.Response.StatusCode
+}
+
+func (r *Response) Header() http.Header {
+	return r.Response.Header
+}
+
+func (r *Response) Proto() string {
+	return r.Response.Proto
+}
+
+func (r *Response) Body() io.Reader {
+	return r.Response.Body
+}
+
+func (r *Response) Request() *http.Request {
+	return r.Response.Request
 }
