@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
@@ -30,6 +31,7 @@ type RequestOptions struct {
 	Header   Header
 	Data     Data
 	Json     bool
+	Form     bool
 	Params   Param
 	Timeout  time.Duration
 	BashAuth baseAuth
@@ -44,23 +46,48 @@ func request(url, method string, options ...*RequestOptions) (resp *Response, er
 	var response Response
 	var params []string
 	client := http.Client{Timeout: option.Timeout}
-	data, _ := json.Marshal(option.Data)
+	// 设置params
 	for k, v := range option.Params {
 		params = append(params, k+"="+v)
 	}
 	if p := strings.Join(params, "&"); p != "" {
 		url = url + "?" + p
 	}
-	r, err = http.NewRequest(method, url, bytes.NewReader(data))
+	if option.Json {
+		data, _ := json.Marshal(option.Data)
+		body := bytes.NewReader(data)
+		if r, err = http.NewRequest(method, url, body); err != nil {
+			return nil, err
+		}
+		r.Header.Set("Content-Type", "application/json")
+	} else if option.Form {
+		body := new(bytes.Buffer)
+		w := multipart.NewWriter(body)
+		for k, v := range option.Data {
+			if vv, ok := v.(string); ok {
+				w.WriteField(k, vv)
+			}
+			if vv, ok := v.(int); ok {
+				w.WriteField(k, fmt.Sprintf("%d", vv))
+			}
+		}
+		w.Close()
+		if r, err = http.NewRequest(method, url, body); err != nil {
+			return nil, err
+		}
+		r.Header.Set("Content-Type", w.FormDataContentType())
+	} else {
+		data, _ := json.Marshal(option.Data)
+		body := bytes.NewReader(data)
+		r, err = http.NewRequest(method, url, body)
+	}
+
 	if err != nil {
 		return resp, err
 	}
 	r.Header.Set("User-Agent", "go-request"+version)
 	for k, v := range option.Header {
 		r.Header.Set(k, v)
-	}
-	if option.Json {
-		r.Header.Set("Content-Type", "application/json")
 	}
 	if option.BashAuth.UserName != "" && option.BashAuth.Password != "" {
 		r.SetBasicAuth(option.BashAuth.UserName, option.BashAuth.Password)
