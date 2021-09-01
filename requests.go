@@ -182,6 +182,24 @@ func DownloadFile(url, dest string) error {
 	}
 }
 
+// 通过form上传文件
+func UploadFile(url, filePath string) error {
+	var buf = &bytes.Buffer{}
+	var bodyWrite = multipart.NewWriter(buf)
+	fileWriter, _ := bodyWrite.CreateFormFile("file", path.Base(filePath))
+	file, _ := os.Open(filePath)
+	defer file.Close()
+	io.Copy(fileWriter, file)
+	bodyWrite.Close()
+	resp, _ := http.Post(url, bodyWrite.FormDataContentType(), buf)
+	defer resp.Body.Close()
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return errors.New(string(respBody))
+	}
+	return nil
+}
+
 type Response struct {
 	Response *http.Response
 }
