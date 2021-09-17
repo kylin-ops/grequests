@@ -29,7 +29,7 @@ type baseAuth struct {
 
 type RequestOptions struct {
 	Header   Header
-	Data     Data
+	Data     interface{}
 	Json     bool
 	Form     bool
 	Params   Param
