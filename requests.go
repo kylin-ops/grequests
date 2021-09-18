@@ -63,7 +63,8 @@ func request(url, method string, options ...*RequestOptions) (resp *Response, er
 	} else if option.Form {
 		body := new(bytes.Buffer)
 		w := multipart.NewWriter(body)
-		for k, v := range option.Data {
+		data, ok := option.Data.(map[string]interface{})
+		for k, v := range data {
 			if vv, ok := v.(string); ok {
 				w.WriteField(k, vv)
 			}
