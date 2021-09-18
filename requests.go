@@ -64,12 +64,14 @@ func request(url, method string, options ...*RequestOptions) (resp *Response, er
 		body := new(bytes.Buffer)
 		w := multipart.NewWriter(body)
 		data, ok := option.Data.(map[string]interface{})
-		for k, v := range data {
-			if vv, ok := v.(string); ok {
-				w.WriteField(k, vv)
-			}
-			if vv, ok := v.(int); ok {
-				w.WriteField(k, fmt.Sprintf("%d", vv))
+		if ok {
+			for k, v := range data {
+				if vv, ok := v.(string); ok {
+					w.WriteField(k, vv)
+				}
+				if vv, ok := v.(int); ok {
+					w.WriteField(k, fmt.Sprintf("%d", vv))
+				}
 			}
 		}
 		w.Close()
