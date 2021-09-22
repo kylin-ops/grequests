@@ -37,7 +37,7 @@ type RequestOptions struct {
 	BashAuth baseAuth
 }
 
-func request(url, method string, options ...*RequestOptions) (resp *Response, err error) {
+func Request(url, method string, options ...*RequestOptions) (resp *Response, err error) {
 	var option = RequestOptions{}
 	if len(options) > 0 {
 		option = *options[0]
@@ -100,27 +100,27 @@ func request(url, method string, options ...*RequestOptions) (resp *Response, er
 }
 
 func Get(url string, options ...*RequestOptions) (resp *Response, err error) {
-	return request(url, "GET", options...)
+	return Request(url, "GET", options...)
 }
 
 func Post(url string, options ...*RequestOptions) (resp *Response, err error) {
-	return request(url, "POST", options...)
+	return Request(url, "POST", options...)
 }
 
 func Put(url string, options ...*RequestOptions) (resp *Response, err error) {
-	return request(url, "PUT", options...)
+	return Request(url, "PUT", options...)
 }
 
 func Patch(url string, options ...*RequestOptions) (resp *Response, err error) {
-	return request(url, "PATCH", options...)
+	return Request(url, "PATCH", options...)
 }
 
 func Delete(url string, options ...*RequestOptions) (resp *Response, err error) {
-	return request(url, "DELETE", options...)
+	return Request(url, "DELETE", options...)
 }
 
 func Head(url string, options ...*RequestOptions) (resp *Response, err error) {
-	return request(url, "HEAD", options...)
+	return Request(url, "HEAD", options...)
 }
 
 func destValidator(dest, filename string) (destFile string) {
