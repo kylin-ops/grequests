@@ -96,6 +96,9 @@ func Request(url, method string, options ...*RequestOptions) (resp *Response, er
 		r.SetBasicAuth(option.BashAuth.UserName, option.BashAuth.Password)
 	}
 	response.Response, err = client.Do(r)
+	if response.Response == nil {
+		return nil, errors.New("response body is nil")
+	}
 	return &response, err
 }
 
@@ -195,7 +198,6 @@ func UploadFile(url, filePath string) error {
 	io.Copy(fileWriter, file)
 	bodyWrite.Close()
 	resp, _ := http.Post(url, bodyWrite.FormDataContentType(), buf)
-	defer resp.Body.Close()
 	respBody, _ := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		return errors.New(string(respBody))
