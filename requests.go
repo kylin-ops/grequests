@@ -19,10 +19,11 @@ import (
 var version = "0.1"
 
 type Header map[string]string
-type Data map[string]interface{}
-type Param map[string]string
 
-type baseAuth struct {
+//type Data map[string]interface{}
+type Param map[string]interface{}
+
+type BaseAuth struct {
 	UserName string
 	Password string
 }
@@ -34,7 +35,52 @@ type RequestOptions struct {
 	Form     bool
 	Params   Param
 	Timeout  time.Duration
-	BashAuth baseAuth
+	BashAuth BaseAuth
+}
+
+type responseBody struct {
+	Code interface{} `json:"code"`
+	Msg  string      `json:"msg"`
+}
+
+// 根据接口规范判断api响应请求是否错误，https://wiki.dotfashion.cn/pages/viewpage.action?pageId=513081416
+func ResponseIsError(data []byte) error {
+	var body = responseBody{Code: "1"}
+	err := json.Unmarshal(data, &body)
+	if err != nil {
+		return fmt.Errorf("响应错误，响应的数据:%s", string(data))
+	}
+	switch body.Code.(type) {
+	case int:
+		if !(body.Code == 0 || body.Code == 200) {
+			err = errors.New(body.Msg)
+		}
+	case string:
+		if !(body.Code == "0" || body.Code == "200") {
+			err = errors.New(body.Msg)
+		}
+	default:
+		err = errors.New(body.Msg)
+	}
+	return err
+}
+
+func _handlerParams(url string, paramsObj map[string]interface{}) string {
+	var params []string
+	var _url = url
+	for k, v := range paramsObj {
+		if _v, ok := v.(string); ok {
+			params = append(params, k+"="+_v)
+		}
+		if _v, ok := v.(int); ok {
+			val := strconv.Itoa(_v)
+			params = append(params, k+"="+val)
+		}
+	}
+	if p := strings.Join(params, "&"); p != "" {
+		_url = url + "?" + p
+	}
+	return _url
 }
 
 func Request(url, method string, options ...*RequestOptions) (resp *Response, err error) {
@@ -44,22 +90,17 @@ func Request(url, method string, options ...*RequestOptions) (resp *Response, er
 	}
 	var r *http.Request
 	var response Response
-	var params []string
 	client := http.Client{Timeout: option.Timeout}
 	// 设置params
-	for k, v := range option.Params {
-		params = append(params, k+"="+v)
-	}
-	if p := strings.Join(params, "&"); p != "" {
-		url = url + "?" + p
-	}
+	url = _handlerParams(url, option.Params)
+
 	if option.Json {
 		data, _ := json.Marshal(option.Data)
 		body := bytes.NewReader(data)
 		if r, err = http.NewRequest(method, url, body); err != nil {
 			return nil, err
 		}
-		r.Header.Set("Content-Type", "application/json")
+		r.Header.Add("Content-Type", "application/json")
 	} else if option.Form {
 		body := new(bytes.Buffer)
 		w := multipart.NewWriter(body)
@@ -78,26 +119,42 @@ func Request(url, method string, options ...*RequestOptions) (resp *Response, er
 		if r, err = http.NewRequest(method, url, body); err != nil {
 			return nil, err
 		}
-		r.Header.Set("Content-Type", w.FormDataContentType())
+		r.Header.Add("Content-Type", w.FormDataContentType())
 	} else {
-		data, _ := json.Marshal(option.Data)
-		body := bytes.NewReader(data)
-		r, err = http.NewRequest(method, url, body)
+		if option.Data != nil {
+			data, _ := json.Marshal(option.Data)
+			body := bytes.NewReader(data)
+			r, err = http.NewRequest(method, url, body)
+		}else {
+			r, err = http.NewRequest(method, url, strings.NewReader(``))
+		}
 	}
 
 	if err != nil {
 		return resp, err
 	}
-	r.Header.Set("User-Agent", "go-request"+version)
+	r.Header.Add("User-Agent", "go-request"+version)
 	for k, v := range option.Header {
-		r.Header.Set(k, v)
+		r.Header.Add(k, v)
 	}
 	if option.BashAuth.UserName != "" && option.BashAuth.Password != "" {
 		r.SetBasicAuth(option.BashAuth.UserName, option.BashAuth.Password)
 	}
 	response.Response, err = client.Do(r)
-	if response.Response == nil {
-		return nil, errors.New("response body is nil")
+	if err != nil {
+		return nil, err
+	}
+	defer response.Response.Body.Close()
+	// d, err := ioutil.ReadAll(response.Response.Body)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//response.Response.Body = ioutil.NopCloser(bytes.NewReader(d))
+	//err = ResponseIsError(d)
+	code := response.StatusCode()
+	if code >= 400 || code < 200 {
+		msg, _ := response.Text()
+		return &response, errors.New(msg)
 	}
 	return &response, err
 }
@@ -153,6 +210,9 @@ func DownloadFile(url, dest string) error {
 		return err
 	}
 	defer req.Body.Close()
+	if req.StatusCode != 200 {
+		return fmt.Errorf("下载错误，响应码是:%d", req.StatusCode)
+	}
 	if req.Body == nil {
 		return errors.New("下载的类容为nil")
 	}
@@ -210,6 +270,10 @@ type Response struct {
 }
 
 func (r *Response) Text() (string, error) {
+	if r == nil {
+		return "", errors.New("response响应体是空")
+	}
+	defer r.Response.Body.Close()
 	d, err := ioutil.ReadAll(r.Response.Body)
 	if err != nil {
 		return "", err
@@ -218,6 +282,10 @@ func (r *Response) Text() (string, error) {
 }
 
 func (r *Response) Json(data interface{}) error {
+	if r == nil {
+		return errors.New("response响应体是空")
+	}
+	defer r.Response.Body.Close()
 	d, err := ioutil.ReadAll(r.Response.Body)
 	if err != nil {
 		return err
@@ -226,6 +294,9 @@ func (r *Response) Json(data interface{}) error {
 }
 
 func (r *Response) Close() error {
+	if r == nil {
+		return errors.New("response响应体是空")
+	}
 	return r.Response.Body.Close()
 }
 
