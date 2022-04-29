@@ -144,7 +144,7 @@ func Request(url, method string, options ...*RequestOptions) (resp *Response, er
 	if err != nil {
 		return nil, err
 	}
-	defer response.Response.Body.Close()
+	// defer response.Response.Body.Close()
 	// d, err := ioutil.ReadAll(response.Response.Body)
 	//if err != nil {
 	//	return nil, err
